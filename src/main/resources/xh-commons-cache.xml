@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation=
+	"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations" value="classpath:xh-commons-cache.properties"/>
+	</bean>
+
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxActive" value="${cache.jedisPool.maxActive}" />
+		<property name="maxIdle" value="${cache.jedisPool.maxIdle}" />
+		<property name="minIdle" value="${cache.jedisPool.minIdle}" />
+		<property name="maxWait" value="${cache.jedisPool.maxWait}" />
+		<property name="testOnBorrow" value="${cache.jedisPool.testOnBorrow}" />
+		<property name="testOnReturn" value="${cache.jedisPool.testOnReturn}" />
+		<property name="whenExhaustedAction" value="${cache.jedisPool.whenExhaustedAction}" />
+		<property name="timeBetweenEvictionRunsMillis" value="${cache.jedisPool.timeBetweenEvictionRunsMillis}" />
+		<property name="testWhileIdle" value="${cache.jedisPool.testWhileIdle}" />
+		<property name="minEvictableIdleTimeMillis" value="${cache.jedisPool.minEvictableIdleTimeMillis}" />
+		<property name="softMinEvictableIdleTimeMillis" value="${cache.jedisPool.softMinEvictableIdleTimeMillis}" />
+		<property name="numTestsPerEvictionRun" value="${cache.jedisPool.numTestsPerEvictionRun}" />
+		
+	</bean>
+
+	<bean id="si1" class="redis.clients.jedis.JedisShardInfo">
+		<constructor-arg index="0" value="${cache.si1.host}" />
+		<constructor-arg index="1" value="${cache.si1.port}" />
+	</bean>
+
+	<bean id="jedisPool" class="redis.clients.jedis.ShardedJedisPool">
+		<constructor-arg index="0" ref="jedisPoolConfig" />
+		<constructor-arg index="1">
+			<list>
+				<ref bean="si1" />
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="cacheDao" class="com.dolplay.xhcache.dao.RedisCacheDao">
+		<constructor-arg index="0" ref="jedisPool" />
+	</bean>
+
+	<bean id="advancedCacheDao"
+		class="com.dolplay.xhcache.dao.RedisAdvancedCacheDao">
+		<constructor-arg index="0" ref="jedisPool" />
+	</bean>
+
+	<bean id="cacheAspect" class="com.dolplay.xhcache.aspect.CacheAspect">
+		<property name="cacheDao" ref="advancedCacheDao" />
+		<property name="defaultStringCacheTimeout" value="${cache.defaultStringCacheTimeout}" />
+		<property name="defaultZsetCacheTimeout" value="${cache.defaultZsetCacheTimeout}" />
+		<property name="stringEternalCacheKeySetIsValid" value="${cache.stringEternalCacheKeySetIsValid}" />
+		<property name="zsetEternalCacheKeySetIsValid" value="${cache.zsetEternalCacheKeySetIsValid}" />
+		<property name="stringEternalCacheKeySetName" value="${cache.stringEternalCacheKeySetName}" />
+		<property name="zsetEternalCacheKeySetName" value="${cache.zsetEternalCacheKeySetName}" />
+		<property name="stringSetUseNewThread" value="${cache.stringSetUseNewThread}" />
+		<property name="zsetSetUseNewThread" value="${cache.zsetSetUseNewThread}" />
+	</bean>
+
+	<aop:aspectj-autoproxy />
+
+</beans>
